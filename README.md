@@ -10,6 +10,8 @@ Foundations of the code built off of [sotrh's tutorial](https://sotrh.github.io/
 - [ ] Better Camera
 - [ ] Rule Setting
 - [ ] Rule Setting UI
+- [ ] Animations of birth/death
+- [ ] Cool Shader Effects like https://stevenhuyn.com/
 - [ ] WebGPU example
 
 ![Cubes](media/cubes.gif)
