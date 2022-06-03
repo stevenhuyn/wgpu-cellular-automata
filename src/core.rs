@@ -3,7 +3,7 @@ use std::iter;
 use wgpu::util::DeviceExt;
 use winit::{event::WindowEvent, window::Window};
 
-use crate::scene::Vertex;
+use crate::{scene::Vertex, INDICES};
 
 pub struct State {
     surface: wgpu::Surface,
@@ -19,12 +19,12 @@ pub struct State {
 
 impl State {
     pub async fn new(window: &Window, vertecies: &[Vertex]) -> Self {
-        let (instance, surface, adapter, device, queue) = State::create_iadq(window).await;
+        let (_instance, surface, adapter, device, queue) = State::create_iadq(window).await;
         let size = window.inner_size();
-        let config = State::configure_surface(&surface, &adapter, &device, size);
+        let config = State::configure_surface(&surface, &adapter, size);
         surface.configure(&device, &config);
         let shader = State::get_shader(&device);
-        let (render_pipeline_layout, render_pipeline, vertex_buffer, index_buffer) =
+        let (_render_pipeline_layout, render_pipeline, vertex_buffer, index_buffer) =
             State::setup_pipeline(&device, &shader, &config, vertecies);
         let num_indices = vertecies.len() as u32;
 
@@ -140,7 +140,6 @@ impl State {
     fn configure_surface(
         surface: &wgpu::Surface,
         adapter: &wgpu::Adapter,
-        device: &wgpu::Device,
         size: winit::dpi::PhysicalSize<u32>,
     ) -> wgpu::SurfaceConfiguration {
         wgpu::SurfaceConfiguration {
@@ -181,12 +180,12 @@ impl State {
             label: Some("Render Pipeline"),
             layout: Some(&render_pipeline_layout),
             vertex: wgpu::VertexState {
-                module: &shader,
+                module: shader,
                 entry_point: "vs_main",
                 buffers: &[Vertex::desc()],
             },
             fragment: Some(wgpu::FragmentState {
-                module: &shader,
+                module: shader,
                 entry_point: "fs_main",
                 targets: &[wgpu::ColorTargetState {
                     format: config.format,
@@ -226,13 +225,14 @@ impl State {
             contents: bytemuck::cast_slice(vertecies),
             usage: wgpu::BufferUsages::VERTEX,
         });
+
+        let indices = (0..vertecies.len() as u16).collect::<Vec<u16>>();
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(vertecies),
+            // Basic indexing atm
+            contents: bytemuck::cast_slice(indices.as_slice()),
             usage: wgpu::BufferUsages::INDEX,
         });
-
-        let num_indices = vertecies.len() as u32;
 
         (
             render_pipeline_layout,
