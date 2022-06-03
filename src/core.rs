@@ -3,7 +3,7 @@ use std::iter;
 use wgpu::util::DeviceExt;
 use winit::{event::WindowEvent, window::Window};
 
-use crate::{scene::Vertex, INDICES};
+use crate::scene::Vertex;
 
 pub struct State {
     surface: wgpu::Surface,
