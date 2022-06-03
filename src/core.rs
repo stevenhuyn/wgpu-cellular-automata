@@ -5,7 +5,7 @@ use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{Camera, CameraController, CameraUniform},
-    scene::Vertex,
+    scene::{Scene, Vertex},
 };
 
 pub struct State {
@@ -26,7 +26,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: &Window, vertecies: &[Vertex]) -> Self {
+    pub async fn new(window: &Window, mut scene: Scene) -> Self {
         let (_instance, surface, adapter, device, queue) = State::create_iadq(window).await;
         let size = window.inner_size();
         let config = State::configure_surface(&surface, &adapter, size);
@@ -34,6 +34,7 @@ impl State {
         let shader = State::get_shader(&device);
         let camera = Camera::new(&config);
         let camera_controller = CameraController::new(0.2);
+        let (vertices, indices) = scene.get_vertices_and_indices();
 
         let (
             camera_bind_group,
@@ -43,8 +44,8 @@ impl State {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-        ) = State::setup_pipeline(&device, &shader, &config, &camera, vertecies);
-        let num_indices = vertecies.len() as u32;
+        ) = State::setup_pipeline(&device, &shader, &config, &camera, &vertices, &indices);
+        let num_indices = indices.len() as u32;
 
         Self {
             surface,
@@ -196,6 +197,7 @@ impl State {
         config: &wgpu::SurfaceConfiguration,
         camera: &Camera,
         vertecies: &[Vertex],
+        indices: &[u16],
     ) -> (
         wgpu::BindGroup,
         wgpu::Buffer,
@@ -296,11 +298,10 @@ impl State {
             usage: wgpu::BufferUsages::VERTEX,
         });
 
-        let indices = (0..vertecies.len() as u16).collect::<Vec<u16>>();
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             // Basic indexing atm
-            contents: bytemuck::cast_slice(indices.as_slice()),
+            contents: bytemuck::cast_slice(indices),
             usage: wgpu::BufferUsages::INDEX,
         });
 

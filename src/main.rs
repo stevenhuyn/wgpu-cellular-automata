@@ -1,4 +1,4 @@
-use scene::Vertex;
+use scene::{Scene, Vertex};
 use winit::{
     event::*,
     event_loop::{ControlFlow, EventLoop},
@@ -9,6 +9,7 @@ use crate::core::State;
 
 mod camera;
 mod core;
+mod cube;
 mod scene;
 
 const VERTICES: &[Vertex] = &[
@@ -31,8 +32,10 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new().build(&event_loop).unwrap();
 
+    let scene = Scene::new();
+
     // State::new uses async code, so we're going to wait for it to finish
-    let mut state = pollster::block_on(State::new(&window, VERTICES));
+    let mut state = pollster::block_on(State::new(&window, scene));
 
     // main()
     event_loop.run(move |event, _, control_flow| match event {

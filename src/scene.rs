@@ -1,3 +1,5 @@
+use crate::cube::Cube;
+
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
@@ -28,14 +30,28 @@ impl Vertex {
     }
 }
 
-// struct Scene {
-//     : Vec<f32>,
-// }
+pub struct Scene {
+    cubes: Vec<Cube>,
+}
 
-// impl Scene {
-//     pub fn new() -> Self {
-//         Self {
-//             objects: Vec::new(),
-//         }
-//     }
-// }
+impl Scene {
+    pub fn new() -> Self {
+        let cubes = vec![Cube::new(0., 0., 0., 1., [0.5, 0.5, 0.5])];
+        Self { cubes }
+    }
+
+    // pub fn add_cube(&mut self, cube: Cube) {
+    //     self.cubes.push(cube);
+    // }
+
+    pub fn get_vertices_and_indices(&mut self) -> (Vec<Vertex>, Vec<u16>) {
+        let mut vertices: Vec<Vertex> = Vec::new();
+        let mut indices: Vec<u16> = Vec::new();
+        for cube in self.cubes.iter() {
+            vertices.extend(&cube.vertices);
+            indices.extend(&cube.indices);
+        }
+
+        (vertices, indices)
+    }
+}
