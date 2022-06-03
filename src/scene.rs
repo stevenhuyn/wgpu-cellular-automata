@@ -36,7 +36,12 @@ pub struct Scene {
 
 impl Scene {
     pub fn new() -> Self {
-        let cubes = vec![Cube::new(0., 0., 0., 1., [0.5, 0.5, 0.5])];
+        let cubes = vec![
+            Cube::new(0., 0., 0., 1., [1., 0., 0.]),
+            Cube::new(1., 0., 0., 1., [0., 1., 0.]),
+            Cube::new(0., 1., 0., 1., [0., 0., 1.]),
+            Cube::new(0., 1., 1., 1., [1., 1., 0.5]),
+        ];
         Self { cubes }
     }
 
@@ -47,9 +52,11 @@ impl Scene {
     pub fn get_vertices_and_indices(&mut self) -> (Vec<Vertex>, Vec<u16>) {
         let mut vertices: Vec<Vertex> = Vec::new();
         let mut indices: Vec<u16> = Vec::new();
+        let mut running_index = 0;
         for cube in self.cubes.iter() {
             vertices.extend(&cube.vertices);
-            indices.extend(&cube.indices);
+            indices.extend(cube.indices.iter().map(|x| x + running_index));
+            running_index += cube.vertices.len() as u16;
         }
 
         (vertices, indices)

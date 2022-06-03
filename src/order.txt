@@ -1,2 +1,0 @@
-Pass in window
-get instance
