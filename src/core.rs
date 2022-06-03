@@ -1,5 +1,6 @@
 use std::iter;
 
+use smaa::SmaaTarget;
 use wgpu::util::DeviceExt;
 use winit::{event::WindowEvent, window::Window};
 
@@ -25,6 +26,7 @@ pub struct State {
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
     num_indices: u32,
+    pub smaa_target: SmaaTarget,
 }
 
 impl State {
@@ -37,6 +39,15 @@ impl State {
         let camera = Camera::new(&config);
         let camera_controller = CameraController::new(0.2);
         let depth_texture = Texture::create_depth_texture(&device, &config, "depth_texture");
+
+        let smaa_target = SmaaTarget::new(
+            &device,
+            &queue,
+            window.inner_size().width,
+            window.inner_size().height,
+            config.format,
+            smaa::SmaaMode::Smaa1X,
+        );
 
         let (vertices, indices) = scene.get_vertices_and_indices();
 
@@ -67,6 +78,7 @@ impl State {
             vertex_buffer,
             index_buffer,
             num_indices,
+            smaa_target,
         }
     }
 
@@ -78,6 +90,8 @@ impl State {
             self.surface.configure(&self.device, &self.config);
             self.depth_texture =
                 Texture::create_depth_texture(&self.device, &self.config, "depth_texture");
+            self.smaa_target
+                .resize(&self.device, new_size.width, new_size.height);
         }
     }
 
@@ -101,6 +115,9 @@ impl State {
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
+        let smaa_frame = self
+            .smaa_target
+            .start_frame(&self.device, &self.queue, &view);
 
         let mut encoder = self
             .device
@@ -112,7 +129,7 @@ impl State {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: &view,
+                    view: &*smaa_frame,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
@@ -142,6 +159,8 @@ impl State {
         }
 
         self.queue.submit(iter::once(encoder.finish()));
+
+        smaa_frame.resolve();
         output.present();
 
         Ok(())
