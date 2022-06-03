@@ -6,7 +6,9 @@ use winit::{
 
 use crate::core::State;
 
+mod camera;
 mod core;
+mod core2;
 mod texture;
 
 fn main() {
