@@ -302,18 +302,20 @@ impl State {
         });
 
         // Following Birth/Survive notiation https://conwaylife.com/wiki/Rulestring
-        let birth_list: Vec<u32> = vec![10, 11, 12, 13];
-        let survive_list: Vec<u32> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+        let birth_list: Vec<usize> = vec![10, 11, 12, 13];
+        let survive_list: Vec<usize> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+        let mut ruleset_list: Vec<usize> = vec![0; 33];
+        for birth in birth_list {
+            ruleset_list[birth] = 2;
+        }
 
-        let birth_list_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        for survive in survive_list {
+            ruleset_list[survive] = 1;
+        }
+
+        let rulset_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Conway Birth List"),
-            contents: bytemuck::cast_slice(&birth_list),
-            usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        });
-
-        let survive_list_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Conway Survive List"),
-            contents: bytemuck::cast_slice(&survive_list),
+            contents: bytemuck::cast_slice(&ruleset_list),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
 
@@ -327,25 +329,13 @@ impl State {
                             ty: wgpu::BufferBindingType::Uniform,
                             has_dynamic_offset: false,
                             min_binding_size: wgpu::BufferSize::new(
-                                (birth_list.len() * mem::size_of::<u32>()) as _,
+                                (ruleset_list.len() * mem::size_of::<u32>()) as _,
                             ),
                         },
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
                         binding: 1,
-                        visibility: wgpu::ShaderStages::COMPUTE,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: wgpu::BufferSize::new(
-                                (survive_list.len() * mem::size_of::<u32>()) as _,
-                            ),
-                        },
-                        count: None,
-                    },
-                    wgpu::BindGroupLayoutEntry {
-                        binding: 3,
                         visibility: wgpu::ShaderStages::COMPUTE,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: true },
@@ -357,7 +347,7 @@ impl State {
                         count: None,
                     },
                     wgpu::BindGroupLayoutEntry {
-                        binding: 4,
+                        binding: 2,
                         visibility: wgpu::ShaderStages::COMPUTE,
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: false },
