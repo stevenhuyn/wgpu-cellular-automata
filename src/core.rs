@@ -7,6 +7,7 @@ use winit::{event::WindowEvent, window::Window};
 
 use crate::{
     camera::{Camera, CameraController, CameraUniform},
+    cube::Cube,
     scene::{Scene, Vertex},
     texture::Texture,
 };
@@ -18,6 +19,7 @@ pub struct State {
     cell_bind_groups: Vec<wgpu::BindGroup>,
     cell_buffers: Vec<wgpu::Buffer>,
     compute_pipeline: ComputePipeline,
+    frame_num: usize,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -76,6 +78,7 @@ impl State {
             cell_bind_groups,
             cell_buffers,
             compute_pipeline,
+            frame_num: 0,
             surface,
             device,
             queue,
@@ -123,7 +126,7 @@ impl State {
         );
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
+    pub async fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.surface.get_current_texture()?;
         let view = output
             .texture
@@ -137,6 +140,17 @@ impl State {
             .create_command_encoder(&wgpu::CommandEncoderDescriptor {
                 label: Some("Render Encoder"),
             });
+
+        // Run Compute Pass
+        encoder.push_debug_group("compute boid movement");
+        {
+            let mut cpass =
+                encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
+            cpass.set_pipeline(&self.compute_pipeline);
+            cpass.set_bind_group(0, &self.cell_bind_groups[self.frame_num % 2], &[]);
+            cpass.dispatch(GRID_WIDTH, GRID_WIDTH, GRID_WIDTH);
+        }
+        encoder.pop_debug_group();
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -171,7 +185,48 @@ impl State {
             render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
         }
 
+        // update frame count
+        self.frame_num += 1;
+
         self.queue.submit(iter::once(encoder.finish()));
+
+        // Recalculate Vertices
+        let cell_buffer_slice = self.cell_buffers[self.frame_num % 2].slice(..);
+        let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
+        self.device.poll(wgpu::Maintain::Wait);
+
+        if let Ok(()) = cell_buffer_future.await {
+            // Gets contents of buffer
+            let data = cell_buffer_slice.get_mapped_range();
+            // Since contents are got in bytes, this converts these bytes back to u32
+            let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
+
+            let mut scene = Scene::new();
+            for result_chunk in result.chunks(4) {
+                let x = result_chunk[1] as f32;
+                let y = result_chunk[2] as f32;
+
+                let z = result_chunk[3] as f32;
+
+                scene.add_cube(Cube::new(
+                    x,
+                    y,
+                    z,
+                    1.,
+                    [
+                        x / GRID_WIDTH as f32,
+                        y / GRID_WIDTH as f32,
+                        z / GRID_WIDTH as f32,
+                    ],
+                ))
+            }
+
+            let (vertices, indices) = scene.get_vertices_and_indices();
+            self.queue
+                .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+            self.queue
+                .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
+        }
 
         smaa_frame.resolve();
         output.present();
@@ -296,7 +351,7 @@ impl State {
                             ty: wgpu::BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
                             min_binding_size: wgpu::BufferSize::new(
-                                (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 4) as _,
+                                (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 16) as _,
                             ),
                         },
                         count: None,
@@ -308,7 +363,7 @@ impl State {
                             ty: wgpu::BufferBindingType::Storage { read_only: false },
                             has_dynamic_offset: false,
                             min_binding_size: wgpu::BufferSize::new(
-                                (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 4) as _,
+                                (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 16) as _,
                             ),
                         },
                         count: None,
@@ -335,9 +390,21 @@ impl State {
 
         // Setting up initial cell data data
         let mut rng = thread_rng();
-        let mut initial_cell_state: Vec<u32> = (0..TOTAL_CELLS as usize)
+        let mut initial_cell_state: Vec<u32> = (0..(TOTAL_CELLS * 4) as usize)
             .map(|_| if rng.gen_bool(0.5) { 0 } else { 1 })
             .collect();
+
+        let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
+        for x in 0..GRID_WIDTH {
+            for y in 0..GRID_WIDTH {
+                for z in 0..GRID_WIDTH {
+                    let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
+                    cell_instance_chunk[1] = x;
+                    cell_instance_chunk[2] = y;
+                    cell_instance_chunk[3] = z;
+                }
+            }
+        }
 
         // Create two buffers of cell state
         let mut cell_buffers = Vec::<wgpu::Buffer>::new();
