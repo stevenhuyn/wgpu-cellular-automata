@@ -418,18 +418,14 @@ impl State {
                 entries: &[
                     wgpu::BindGroupEntry {
                         binding: 0,
-                        resource: birth_list_buffer.as_entire_binding(),
+                        resource: rulset_buffer.as_entire_binding(),
                     },
                     wgpu::BindGroupEntry {
                         binding: 1,
-                        resource: survive_list_buffer.as_entire_binding(),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 2,
                         resource: cell_buffers[i].as_entire_binding(),
                     },
                     wgpu::BindGroupEntry {
-                        binding: 3,
+                        binding: 2,
                         resource: cell_buffers[(i + 1) % 2].as_entire_binding(), // bind to opposite buffer
                     },
                 ],
