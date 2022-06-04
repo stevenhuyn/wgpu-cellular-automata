@@ -2,7 +2,7 @@ use std::{borrow::Cow, iter, mem};
 
 use rand::{distributions::Uniform, prelude::IteratorRandom, thread_rng, Rng, SeedableRng};
 use smaa::SmaaTarget;
-use wgpu::util::DeviceExt;
+use wgpu::{util::DeviceExt, BindGroup, ComputePipeline};
 use winit::{event::WindowEvent, window::Window};
 
 use crate::{
@@ -15,6 +15,9 @@ const GRID_WIDTH: u32 = 30;
 const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
 
 pub struct State {
+    cell_bind_groups: Vec<wgpu::BindGroup>,
+    cell_buffers: Vec<wgpu::Buffer>,
+    compute_pipeline: ComputePipeline,
     surface: wgpu::Surface,
     device: wgpu::Device,
     queue: wgpu::Queue,
@@ -66,7 +69,13 @@ impl State {
         ) = State::setup_render_pipeline(&device, &shader, &config, &camera, &vertices, &indices);
         let num_indices = indices.len() as u32;
 
+        let (cell_bind_groups, cell_buffers, compute_pipeline) =
+            State::setup_compute_pipeline(&device);
+
         Self {
+            cell_bind_groups,
+            cell_buffers,
+            compute_pipeline,
             surface,
             device,
             queue,
@@ -229,11 +238,8 @@ impl State {
     }
 
     fn setup_compute_pipeline(
-        config: &wgpu::SurfaceConfiguration,
-        adapter: &wgpu::Adapter,
         device: &wgpu::Device,
-        queue: &wgpu::Queue,
-    ) {
+    ) -> (Vec<wgpu::BindGroup>, Vec<wgpu::Buffer>, ComputePipeline) {
         // Compute
         let compute_shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
             label: None,
@@ -373,6 +379,8 @@ impl State {
                 label: None,
             }));
         }
+
+        (cell_bind_groups, cell_buffers, compute_pipeline)
     }
 
     fn setup_render_pipeline(
