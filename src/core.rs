@@ -34,8 +34,8 @@ pub struct State {
     render_pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
-    num_indices: u32,
     pub smaa_target: SmaaTarget,
+    scene: Scene,
 }
 
 impl State {
@@ -58,8 +58,6 @@ impl State {
             smaa::SmaaMode::Smaa1X,
         );
 
-        let (vertices, indices) = scene.get_vertices_and_indices();
-
         let (
             camera_bind_group,
             camera_buffer,
@@ -68,8 +66,7 @@ impl State {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-        ) = State::setup_render_pipeline(&device, &shader, &config, &camera, &vertices, &indices);
-        let num_indices = indices.len() as u32;
+        ) = State::setup_render_pipeline(&device, &shader, &config, &camera);
 
         let (cell_bind_groups, cell_buffers, compute_pipeline) =
             State::setup_compute_pipeline(&device);
@@ -93,8 +90,8 @@ impl State {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-            num_indices,
             smaa_target,
+            scene,
         }
     }
 
@@ -178,11 +175,18 @@ impl State {
                 }),
             });
 
+            let (vertices, indices) = self.scene.get_vertices_and_indices();
+
+            self.queue
+                .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+            self.queue
+                .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
+
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
             render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
-            render_pass.draw_indexed(0..self.num_indices, 0, 0..1);
+            render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
         }
 
         // update frame count
@@ -219,13 +223,16 @@ impl State {
                     ],
                 ))
             }
+
+            drop(data);
+            self.cell_buffers[self.frame_num % 2].unmap();
         }
 
-        // let (vertices, indices) = scene.get_vertices_and_indices();
-        // self.queue
-        //     .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
-        // self.queue
-        //     .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
+        let (vertices, indices) = scene.get_vertices_and_indices();
+        self.queue
+            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+        self.queue
+            .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
 
         smaa_frame.resolve();
         output.present();
@@ -441,8 +448,6 @@ impl State {
         shader: &wgpu::ShaderModule,
         config: &wgpu::SurfaceConfiguration,
         camera: &Camera,
-        vertices: &[Vertex],
-        indices: &[u16],
     ) -> (
         wgpu::BindGroup,
         wgpu::Buffer,
@@ -543,16 +548,18 @@ impl State {
             multiview: None,
         });
 
-        let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(vertices),
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
 
-        let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+        let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Index Buffer"),
-            contents: bytemuck::cast_slice(indices),
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
         });
 
         (
