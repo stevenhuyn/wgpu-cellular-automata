@@ -142,15 +142,15 @@ impl State {
             });
 
         // Run Compute Pass
-        // encoder.push_debug_group("compute boid movement");
-        // {
-        //     let mut cpass =
-        //         encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
-        //     cpass.set_pipeline(&self.compute_pipeline);
-        //     cpass.set_bind_group(0, &self.cell_bind_groups[self.frame_num % 2], &[]);
-        //     cpass.dispatch(TOTAL_CELLS, 0, 0);
-        // }
-        // encoder.pop_debug_group();
+        encoder.push_debug_group("compute boid movement");
+        {
+            let mut cpass =
+                encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
+            cpass.set_pipeline(&self.compute_pipeline);
+            cpass.set_bind_group(0, &self.cell_bind_groups[self.frame_num % 2], &[]);
+            cpass.dispatch(TOTAL_CELLS, 0, 0);
+        }
+        encoder.pop_debug_group();
 
         {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -191,35 +191,35 @@ impl State {
         self.queue.submit(iter::once(encoder.finish()));
 
         // Recalculate Vertices
-        // let cell_buffer_slice = self.cell_buffers[self.frame_num % 2].slice(..);
-        // let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
-        // self.device.poll(wgpu::Maintain::Wait);
+        let cell_buffer_slice = self.cell_buffers[self.frame_num % 2].slice(..);
+        let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
+        self.device.poll(wgpu::Maintain::Wait);
 
-        // let mut scene = Scene::new();
-        // if let Ok(()) = cell_buffer_future.await {
-        //     // Gets contents of buffer
-        //     let data = cell_buffer_slice.get_mapped_range();
-        //     // Since contents are got in bytes, this converts these bytes back to u32
-        //     let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
+        let mut scene = Scene::new();
+        if let Ok(()) = cell_buffer_future.await {
+            // Gets contents of buffer
+            let data = cell_buffer_slice.get_mapped_range();
+            // Since contents are got in bytes, this converts these bytes back to u32
+            let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
 
-        //     for result_chunk in result.chunks(4) {
-        //         let x = result_chunk[1] as f32;
-        //         let y = result_chunk[2] as f32;
-        //         let z = result_chunk[3] as f32;
+            for result_chunk in result.chunks(4) {
+                let x = result_chunk[1] as f32;
+                let y = result_chunk[2] as f32;
+                let z = result_chunk[3] as f32;
 
-        //         scene.add_cube(Cube::new(
-        //             x,
-        //             y,
-        //             z,
-        //             1.,
-        //             [
-        //                 x / GRID_WIDTH as f32,
-        //                 y / GRID_WIDTH as f32,
-        //                 z / GRID_WIDTH as f32,
-        //             ],
-        //         ))
-        //     }
-        // }
+                scene.add_cube(Cube::new(
+                    x,
+                    y,
+                    z,
+                    1.,
+                    [
+                        x / GRID_WIDTH as f32,
+                        y / GRID_WIDTH as f32,
+                        z / GRID_WIDTH as f32,
+                    ],
+                ))
+            }
+        }
 
         // let (vertices, indices) = scene.get_vertices_and_indices();
         // self.queue
