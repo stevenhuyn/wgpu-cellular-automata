@@ -34,7 +34,7 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
         }
 
         let neighbour_state = cellsSrc.cells[index].state;
-        if (neighbour_state == 1) {
+        if (neighbour_state > 0) {
           neighbour_count = neighbour_count + 1;
         } 
       }

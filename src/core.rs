@@ -207,21 +207,25 @@ impl State {
             let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
 
             for result_chunk in result.chunks(4) {
+                let state = result_chunk[0] as f32;
                 let x = result_chunk[1] as f32;
                 let y = result_chunk[2] as f32;
                 let z = result_chunk[3] as f32;
+                println!("{}: ({} {} {})", state, x, y, z);
 
-                scene.add_cube(Cube::new(
-                    x,
-                    y,
-                    z,
-                    1.,
-                    [
-                        x / GRID_WIDTH as f32,
-                        y / GRID_WIDTH as f32,
-                        z / GRID_WIDTH as f32,
-                    ],
-                ))
+                if state == 1f32 {
+                    scene.add_cube(Cube::new(
+                        x,
+                        y,
+                        z,
+                        1.,
+                        [
+                            x / GRID_WIDTH as f32,
+                            y / GRID_WIDTH as f32,
+                            z / GRID_WIDTH as f32,
+                        ],
+                    ))
+                }
             }
 
             drop(data);
@@ -229,10 +233,14 @@ impl State {
         }
 
         let (vertices, indices) = scene.get_vertices_and_indices();
+        println!("Num vertices: {}", vertices.len());
+
         self.queue
             .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
         self.queue
             .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
+
+        self.scene = scene;
 
         smaa_frame.resolve();
         output.present();
@@ -395,6 +403,7 @@ impl State {
             for y in 0..GRID_WIDTH {
                 for z in 0..GRID_WIDTH {
                     let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
+                    // cell_instance_chunk[0] = 0;
                     cell_instance_chunk[1] = x as i32;
                     cell_instance_chunk[2] = y as i32;
                     cell_instance_chunk[3] = z as i32;
