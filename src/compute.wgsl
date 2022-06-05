@@ -1,100 +1,50 @@
-struct Particle {
-  pos : vec2<f32>,
-  vel : vec2<f32>,
+struct Ruleset {
+  ruleset : array<u32, 28u>;
 };
 
-struct SimParams {
-  deltaT : f32,
-  rule1Distance : f32,
-  rule2Distance : f32,
-  rule3Distance : f32,
-  rule1Scale : f32,
-  rule2Scale : f32,
-  rule3Scale : f32,
+struct Cell {
+  state : i32;
+  pos   : vec3<i32>;
 };
 
-@group(0) @binding(0) var<uniform> params : SimParams;
-@group(0) @binding(1) var<storage, read> particlesSrc : array<Particle>;
-@group(0) @binding(2) var<storage, read_write> particlesDst : array<Particle>;
+struct Cells {
+  cells : [[stride(32)]] array<Cell>;
+};
 
-// https://github.com/austinEng/Project6-Vulkan-Flocking/blob/master/data/shaders/computeparticles/particle.comp
-@compute
-@workgroup_size(64)
-fn main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>) {
-  let total = arrayLength(&particlesSrc);
+[[group(0), binding(0)]] var<uniform> ruleset : Ruleset;
+[[group(0), binding(1)]] var<storage, read> cellsSrc : Cells;
+[[group(0), binding(2)]] var<storage, read_write> cellsDst : Cells;
+
+[[stage(compute), workgroup_size(64)]]
+fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
   let index = global_invocation_id.x;
-  if (index >= total) {
-    return;
-  }
+  var neighbour_count = 0;
+  let cell_pos = cellsSrc.cells[index].pos;
+  for (var dx = -1; dx < 2; dx = dx + 1) {
+    for (var dy = -1; dy < 2; dy = dy + 1) {
+      for (var dz = -1; dz < 2; dz = dz + 1) {
+        // Getting candidate neighbor
+        let nx = cell_pos.x + dx;
+        let ny = cell_pos.y + dy;
+        let nz = cell_pos.z + dz;
 
-  var vPos : vec2<f32> = particlesSrc[index].pos;
-  var vVel : vec2<f32> = particlesSrc[index].vel;
+        // Checking bounds of the grid
+        if (nx < 0 || nx > 8 || ny < 0 || ny > 8 || nz < 0 || nz > 8) {
+          continue;
+        }
 
-  var cMass : vec2<f32> = vec2<f32>(0.0, 0.0);
-  var cVel : vec2<f32> = vec2<f32>(0.0, 0.0);
-  var colVel : vec2<f32> = vec2<f32>(0.0, 0.0);
-  var cMassCount : i32 = 0;
-  var cVelCount : i32 = 0;
-
-  var i : u32 = 0u;
-  loop {
-    if (i >= total) {
-      break;
-    }
-    if (i == index) {
-      continue;
-    }
-
-    let pos = particlesSrc[i].pos;
-    let vel = particlesSrc[i].vel;
-
-    if (distance(pos, vPos) < params.rule1Distance) {
-      cMass += pos;
-      cMassCount += 1;
-    }
-    if (distance(pos, vPos) < params.rule2Distance) {
-      colVel -= pos - vPos;
-    }
-    if (distance(pos, vPos) < params.rule3Distance) {
-      cVel += vel;
-      cVelCount += 1;
-    }
-
-    continuing {
-      i = i + 1u;
+        let neighbour_state = cellsSrc.cells[index].state;
+        if (neighbour_state == 1) {
+          neighbour_count = neighbour_count + 1;
+        } 
+      }
     }
   }
-  if (cMassCount > 0) {
-    cMass = cMass * (1.0 / f32(cMassCount)) - vPos;
-  }
-  if (cVelCount > 0) {
-    cVel *= 1.0 / f32(cVelCount);
-  }
 
-  vVel = vVel + (cMass * params.rule1Scale) +
-      (colVel * params.rule2Scale) +
-      (cVel * params.rule3Scale);
-
-  // clamp velocity for a more pleasing simulation
-  vVel = normalize(vVel) * clamp(length(vVel), 0.0, 0.1);
-
-  // kinematic update
-  vPos += vVel * params.deltaT;
-
-  // Wrap around boundary
-  if (vPos.x < -1.0) {
-    vPos.x = 1.0;
-  }
-  if (vPos.x > 1.0) {
-    vPos.x = -1.0;
-  }
-  if (vPos.y < -1.0) {
-    vPos.y = 1.0;
-  }
-  if (vPos.y > 1.0) {
-    vPos.y = -1.0;
-  }
-
-  // Write back
-  particlesDst[index] = Particle(vPos, vVel);
+    if (ruleset.ruleset[neighbour_count] == 0u) { // Become dead
+      cellsDst.cells[index].state = 0;
+    } else if (ruleset.ruleset[neighbour_count] == 2u) { // Become alive
+      cellsDst.cells[index].state = 1;
+    }
+      
 }

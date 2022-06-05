@@ -12,7 +12,7 @@ use crate::{
     texture::Texture,
 };
 
-const GRID_WIDTH: u32 = 30;
+const GRID_WIDTH: u32 = 5;
 const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
 
 pub struct State {
@@ -148,7 +148,7 @@ impl State {
                 encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
             cpass.set_pipeline(&self.compute_pipeline);
             cpass.set_bind_group(0, &self.cell_bind_groups[self.frame_num % 2], &[]);
-            cpass.dispatch(GRID_WIDTH, GRID_WIDTH, GRID_WIDTH);
+            cpass.dispatch(TOTAL_CELLS, 0, 0);
         }
         encoder.pop_debug_group();
 
@@ -301,7 +301,7 @@ impl State {
             source: wgpu::ShaderSource::Wgsl(Cow::Borrowed(include_str!("compute.wgsl"))),
         });
 
-        // Following Birth/Survive notiation https://conwaylife.com/wiki/Rulestring
+        // Following Death/Survive/Birth -> 0/1/2
         let birth_list: Vec<usize> = vec![10, 11, 12, 13];
         let survive_list: Vec<usize> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
         let mut ruleset_list: Vec<usize> = vec![0; 33];
@@ -380,7 +380,7 @@ impl State {
 
         // Setting up initial cell data data
         let mut rng = thread_rng();
-        let mut initial_cell_state: Vec<u32> = (0..(TOTAL_CELLS * 4) as usize)
+        let mut initial_cell_state: Vec<i32> = (0..(TOTAL_CELLS * 4) as usize)
             .map(|_| if rng.gen_bool(0.5) { 0 } else { 1 })
             .collect();
 
@@ -389,9 +389,9 @@ impl State {
             for y in 0..GRID_WIDTH {
                 for z in 0..GRID_WIDTH {
                     let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
-                    cell_instance_chunk[1] = x;
-                    cell_instance_chunk[2] = y;
-                    cell_instance_chunk[3] = z;
+                    cell_instance_chunk[1] = x as i32;
+                    cell_instance_chunk[2] = y as i32;
+                    cell_instance_chunk[3] = z as i32;
                 }
             }
         }
@@ -402,11 +402,12 @@ impl State {
         for i in 0..2 {
             cell_buffers.push(
                 device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-                    label: Some(&format!("Particle Buffer {}", i)),
+                    label: Some(&format!("Cell Buffer {}", i)),
                     contents: bytemuck::cast_slice(&initial_cell_state),
                     usage: wgpu::BufferUsages::VERTEX
                         | wgpu::BufferUsages::STORAGE
-                        | wgpu::BufferUsages::COPY_DST,
+                        | wgpu::BufferUsages::COPY_DST
+                        | wgpu::BufferUsages::MAP_READ
                 }),
             );
         }
@@ -546,13 +547,13 @@ impl State {
         let vertex_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Vertex Buffer"),
             contents: bytemuck::cast_slice(vertecies),
-            usage: wgpu::BufferUsages::VERTEX,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
         });
 
         let index_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Index Buffer"),
             contents: bytemuck::cast_slice(indices),
-            usage: wgpu::BufferUsages::INDEX,
+            usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
         });
 
         (
