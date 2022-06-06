@@ -140,7 +140,7 @@ impl State {
             });
 
         // Recalculate Vertices
-        let computed_cell_buffer = &self.cell_buffers[self.frame_num % 2];
+        let computed_cell_buffer = &self.cell_buffers[(self.frame_num + 1) % 2];
         let cell_buffer_slice = computed_cell_buffer.slice(..);
         let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
         self.device.poll(wgpu::Maintain::Wait);
@@ -250,7 +250,7 @@ impl State {
 
         self.frame_num += 1;
 
-        thread::sleep(time::Duration::from_millis(60));
+        thread::sleep(time::Duration::from_millis(500));
 
         Ok(())
     }
@@ -323,8 +323,8 @@ impl State {
         });
 
         // Following Death/Survive/Birth -> 0/1/2
-        let birth_list: Vec<u32> = vec![4];
-        let survive_list: Vec<u32> = vec![5, 6];
+        let birth_list: Vec<u32> = vec![4, 5, 6, 7, 8, 9, 10];
+        let survive_list: Vec<u32> = vec![4, 5, 6, 7, 8];
         let mut ruleset_list: Vec<u32> = vec![0; 27];
         for birth in birth_list {
             ruleset_list[birth as usize] = 2;
@@ -403,7 +403,7 @@ impl State {
         // Setting up initial cell data data
         let mut rng = thread_rng();
         let mut initial_cell_state: Vec<i32> = (0..(TOTAL_CELLS * 4) as usize)
-            .map(|_| if rng.gen_bool(0.4) { 0 } else { 1 })
+            .map(|_| if rng.gen_bool(0.5) { 0 } else { 1 })
             .collect();
 
         let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
@@ -411,7 +411,7 @@ impl State {
             for y in 0..GRID_WIDTH {
                 for z in 0..GRID_WIDTH {
                     let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
-                    cell_instance_chunk[0] = 1;
+                    // cell_instance_chunk[0] = 1;
                     cell_instance_chunk[1] = x as i32;
                     cell_instance_chunk[2] = y as i32;
                     cell_instance_chunk[3] = z as i32;
