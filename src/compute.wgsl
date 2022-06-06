@@ -4,11 +4,13 @@ struct Ruleset {
 
 struct Cell {
   state : i32;
-  pos   : vec3<i32>;
+  x     : i32;
+  y     : i32;
+  z     : i32;
 };
 
 struct Cells {
-  cells : array<Cell>;
+  cells : [[stride(32)]] array<Cell>;
 };
 
 
@@ -16,11 +18,11 @@ struct Cells {
 [[group(0), binding(1)]] var<storage, read> cellsSrc : Cells;
 [[group(0), binding(2)]] var<storage, read_write> cellsDst : Cells;
 
-[[stage(compute), workgroup_size(64)]]
+[[stage(compute), workgroup_size(256)]]
 fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
   let index = global_invocation_id.x;
   var neighbour_count = 0;
-  let cell_pos = cellsSrc.cells[index].pos;
+  let cell = cellsSrc.cells[index];
   for (var dx = -1; dx < 2; dx = dx + 1) {
     for (var dy = -1; dy < 2; dy = dy + 1) {
       for (var dz = -1; dz < 2; dz = dz + 1) {
@@ -29,9 +31,9 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
         }
 
         // Getting candidate neighbor
-        let nx = cell_pos.x + dx;
-        let ny = cell_pos.y + dy;
-        let nz = cell_pos.z + dz;
+        let nx = cell.x + dx;
+        let ny = cell.y + dy;
+        let nz = cell.z + dz;
         let width = 15;
 
         // Checking bounds of the grid
@@ -39,7 +41,7 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
           continue;
         }
 
-        let neighbour_state = cellsSrc.cells[nz + (ny * width) + (nx * width)].state;
+        let neighbour_state = cellsSrc.cells[nz + (ny * width) + (nx * width * width)].state;
         if (neighbour_state == 1) {
           neighbour_count = neighbour_count + 1;
         } 
@@ -48,9 +50,9 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
   }
 
 
-  if (ruleset.ruleset[neighbour_count] == 1u && cellsSrc.cells[index].state == 1) { // Stay alive
+  if (ruleset.ruleset[neighbour_count] == 1u && cell.state == 1) { // Stay alive
     cellsDst.cells[index].state = 0;
-  } else if (ruleset.ruleset[neighbour_count] == 2u && cellsSrc.cells[index].state == 1) { // Become alive
+  } else if (ruleset.ruleset[neighbour_count] == 2u && cell.state == 1) { // Become alive
     cellsDst.cells[index].state = 1;
   } else {
     cellsDst.cells[index].state = 0;

@@ -149,8 +149,8 @@ impl State {
         if let Ok(()) = cell_buffer_future.await {
             // Gets contents of buffer
             let data = cell_buffer_slice.get_mapped_range();
-            // Since contents are got in bytes, this converts these bytes back to u32
-            let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
+            // Since contents are got in bytes, this converts these bytes back to i32
+            let result: Vec<i32> = bytemuck::cast_slice(&data).to_vec();
 
             for result_chunk in result.chunks(4) {
                 let state = result_chunk[0] as f32;
@@ -361,9 +361,7 @@ impl State {
                             ty: wgpu::BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
                             // min_binding_size: None,
-                            min_binding_size: wgpu::BufferSize::new(
-                                (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 16) as _,
-                            ),
+                            min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 16) as _),
                         },
                         count: None,
                     },
@@ -374,9 +372,7 @@ impl State {
                             ty: wgpu::BufferBindingType::Storage { read_only: false },
                             has_dynamic_offset: false,
                             // min_binding_size: None,
-                            min_binding_size: wgpu::BufferSize::new(
-                                (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 16) as _,
-                            ),
+                            min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 16) as _),
                         },
                         count: None,
                     },
@@ -567,14 +563,14 @@ impl State {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Vertex Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 100,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Index Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 100,
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
