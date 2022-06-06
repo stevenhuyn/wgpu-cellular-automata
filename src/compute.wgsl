@@ -54,7 +54,7 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
     cellsDst.cells[index].state = 0;
   } else if (ruleset.ruleset[neighbour_count] == 2u && cell.state == 1) { // Become alive
     cellsDst.cells[index].state = 1;
-  } else {
+  } else if (ruleset.ruleset[neighbour_count] == 0u)  {
     cellsDst.cells[index].state = 0;
   }
 }

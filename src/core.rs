@@ -178,12 +178,12 @@ impl State {
             computed_cell_buffer.unmap();
         }
 
-        let (vertices, indices) = scene.get_vertices_and_indices();
-        println!(
-            "Num cubes: {} fn: {}",
-            self.scene.cubes.len(),
-            self.frame_num
-        );
+        // let (vertices, indices) = scene.get_vertices_and_indices();
+        // println!(
+        //     "Num cubes: {} fn: {}",
+        //     self.scene.cubes.len(),
+        //     self.frame_num
+        // );
 
         // self.queue
         //     .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
@@ -563,14 +563,14 @@ impl State {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Vertex Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 100,
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Index Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 100,
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
