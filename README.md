@@ -6,12 +6,10 @@ Foundations of the code built off of [sotrh's tutorial](https://sotrh.github.io/
 
 ## Todo
 - [x] Cubes
-- [ ] Compute Shader
-- [ ] Better Camera
-- [ ] Rule Setting
-- [ ] Rule Setting UI
-- [ ] Animations of birth/death
-- [ ] Cool Shader Effects like https://stevenhuyn.com/
+- [x] Compute Shader
+- [ ] Better Camera Controls
+- [ ] Configuration (camera poistion, ruleset, grid width)
+- [ ] Aesthetic changes (Lighting, birth/death animation)
 - [ ] WebGPU example
 
-![Cubes](media/cubes.gif)
+![Cubes](media/conwaytime.gif)
