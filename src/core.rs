@@ -178,17 +178,18 @@ impl State {
             computed_cell_buffer.unmap();
         }
 
-        // let (vertices, indices) = scene.get_vertices_and_indices();
+        let (vertices, indices) = scene.get_vertices_and_indices();
+
+        self.queue
+            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+        self.queue
+            .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
+
         // println!(
         //     "Num cubes: {} fn: {}",
         //     self.scene.cubes.len(),
         //     self.frame_num
         // );
-
-        // self.queue
-        //     .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
-        // self.queue
-        //     .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
 
         self.scene = scene;
 
@@ -229,13 +230,6 @@ impl State {
                 }),
             });
 
-            let (vertices, indices) = self.scene.get_vertices_and_indices();
-
-            self.queue
-                .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
-            self.queue
-                .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
-
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
@@ -250,7 +244,7 @@ impl State {
 
         self.frame_num += 1;
 
-        thread::sleep(time::Duration::from_millis(500));
+        // thread::sleep(time::Duration::from_millis(50));
 
         Ok(())
     }
@@ -270,7 +264,7 @@ impl State {
         let surface = unsafe { instance.create_surface(window) };
         let adapter = instance
             .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
+                power_preference: wgpu::PowerPreference::HighPerformance,
                 compatible_surface: Some(&surface),
                 force_fallback_adapter: false,
             })
@@ -323,8 +317,8 @@ impl State {
         });
 
         // Following Death/Survive/Birth -> 0/1/2
-        let birth_list: Vec<u32> = vec![4, 5, 6, 7, 8, 9, 10];
-        let survive_list: Vec<u32> = vec![4, 5, 6, 7, 8];
+        let birth_list: Vec<u32> = vec![4];
+        let survive_list: Vec<u32> = vec![5, 6];
         let mut ruleset_list: Vec<u32> = vec![0; 27];
         for birth in birth_list {
             ruleset_list[birth as usize] = 2;
@@ -399,7 +393,7 @@ impl State {
         // Setting up initial cell data data
         let mut rng = thread_rng();
         let mut initial_cell_state: Vec<i32> = (0..(TOTAL_CELLS * 4) as usize)
-            .map(|_| if rng.gen_bool(0.5) { 0 } else { 1 })
+            .map(|_| if rng.gen_bool(0.9) { 0 } else { 1 })
             .collect();
 
         let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
