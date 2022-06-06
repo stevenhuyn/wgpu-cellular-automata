@@ -13,7 +13,7 @@ use crate::{
     texture::Texture,
 };
 
-const GRID_WIDTH: u32 = 15;
+pub const GRID_WIDTH: u32 = 40;
 const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
 
 pub struct State {
@@ -200,7 +200,7 @@ impl State {
                 encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
             cpass.set_pipeline(&self.compute_pipeline);
             cpass.set_bind_group(0, &self.cell_bind_groups[self.frame_num % 2], &[]);
-            cpass.dispatch(TOTAL_CELLS, 1, 1);
+            cpass.dispatch(65535, 1, 1);
         }
         encoder.pop_debug_group();
 
@@ -233,7 +233,7 @@ impl State {
             render_pass.set_pipeline(&self.render_pipeline);
             render_pass.set_bind_group(0, &self.camera_bind_group, &[]);
             render_pass.set_vertex_buffer(0, self.vertex_buffer.slice(..));
-            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint16);
+            render_pass.set_index_buffer(self.index_buffer.slice(..), wgpu::IndexFormat::Uint32);
             render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
         }
 

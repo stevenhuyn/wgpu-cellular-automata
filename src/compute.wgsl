@@ -13,6 +13,7 @@ struct Cells {
   cells : [[stride(16)]] array<Cell>;
 };
 
+ let GRID_WIDTH: i32 = 40;
 
 [[group(0), binding(0)]] var<uniform> ruleset : Ruleset;
 [[group(0), binding(1)]] var<storage, read> cellsSrc : Cells;
@@ -34,14 +35,13 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
         let nx = cell.x + dx;
         let ny = cell.y + dy;
         let nz = cell.z + dz;
-        let width = 15;
 
         // Checking bounds of the grid
-        if (nx < 0 || nx > width - 1 || ny < 0 || ny > width - 1 || nz < 0 || nz > width - 1) {
+        if (nx < 0 || nx > GRID_WIDTH - 1 || ny < 0 || ny > GRID_WIDTH - 1 || nz < 0 || nz > GRID_WIDTH - 1) {
           continue;
         }
 
-        let neighbour_state = cellsSrc.cells[nz + (ny * width) + (nx * width * width)].state;
+        let neighbour_state = cellsSrc.cells[nz + (ny * GRID_WIDTH) + (nx * GRID_WIDTH * GRID_WIDTH)].state;
         if (neighbour_state == 1) {
           neighbour_count = neighbour_count + 1;
         } 

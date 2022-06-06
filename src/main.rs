@@ -1,5 +1,6 @@
 use scene::{Scene, Vertex};
 use winit::{
+    dpi::LogicalSize,
     event::*,
     event_loop::{ControlFlow, EventLoop},
     window::WindowBuilder,
@@ -16,7 +17,10 @@ mod texture;
 fn main() {
     env_logger::init();
     let event_loop = EventLoop::new();
-    let window = WindowBuilder::new().build(&event_loop).unwrap();
+    let window = WindowBuilder::new()
+        .with_inner_size(LogicalSize::new(800., 600.))
+        .build(&event_loop)
+        .unwrap();
 
     let scene = Scene::new();
 

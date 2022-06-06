@@ -2,7 +2,7 @@ use crate::scene::Vertex;
 
 pub struct Cube {
     pub vertices: Vec<Vertex>,
-    pub indices: Vec<u16>,
+    pub indices: Vec<u32>,
 }
 
 impl Cube {

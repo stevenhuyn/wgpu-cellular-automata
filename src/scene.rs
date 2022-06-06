@@ -53,14 +53,14 @@ impl Scene {
         self.cubes.push(cube);
     }
 
-    pub fn get_vertices_and_indices(&mut self) -> (Vec<Vertex>, Vec<u16>) {
+    pub fn get_vertices_and_indices(&mut self) -> (Vec<Vertex>, Vec<u32>) {
         let mut vertices: Vec<Vertex> = Vec::new();
-        let mut indices: Vec<u16> = Vec::new();
+        let mut indices: Vec<u32> = Vec::new();
         let mut running_index = 0;
         for cube in self.cubes.iter() {
             vertices.extend(&cube.vertices);
             indices.extend(cube.indices.iter().map(|x| x + running_index));
-            running_index += cube.vertices.len() as u16;
+            running_index += cube.vertices.len() as u32;
         }
 
         (vertices, indices)
