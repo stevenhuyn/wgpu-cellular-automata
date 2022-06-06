@@ -33,17 +33,21 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
           continue;
         }
 
-        let neighbour_state = cellsSrc.cells[nx + ny * 5 + nz * 25].state;
-        if (neighbour_state > 0) {
+        let neighbour_state = cellsSrc.cells[nx + (ny * 5) + (nz * 25)].state;
+        if (neighbour_state == 1) {
           neighbour_count = neighbour_count + 1;
         } 
       }
     }
   }
 
-    if (ruleset.ruleset[neighbour_count] == 0u) { // Become dead
-      cellsDst.cells[index].state = 0;
-    } else if (ruleset.ruleset[neighbour_count] == 2u) { // Become alive
-      cellsDst.cells[index].state = 1;
-    }
+
+  if (ruleset.ruleset[neighbour_count] == 0u) { // Become dead
+    cellsDst.cells[index].state = 0;
+  } else if (ruleset.ruleset[neighbour_count] == 2u) { // Become alive
+    cellsDst.cells[index].state = 1;
+  } else {
+    cellsDst.cells[index].state = 0;
+  }
+
 }

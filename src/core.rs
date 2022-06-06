@@ -192,7 +192,7 @@ impl State {
         self.queue.submit(iter::once(encoder.finish()));
 
         // Recalculate Vertices
-        let computed_cell_buffer = &self.cell_buffers[(self.frame_num + 1) % 2];
+        let computed_cell_buffer = &self.cell_buffers[self.frame_num % 2];
         let cell_buffer_slice = computed_cell_buffer.slice(..);
         let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
         self.device.poll(wgpu::Maintain::Wait);
@@ -316,15 +316,15 @@ impl State {
         });
 
         // Following Death/Survive/Birth -> 0/1/2
-        let birth_list: Vec<usize> = vec![10, 11, 12, 13];
-        let survive_list: Vec<usize> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
-        let mut ruleset_list: Vec<usize> = vec![0; 33];
+        let birth_list: Vec<u32> = vec![10, 11, 12, 13];
+        let survive_list: Vec<u32> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
+        let mut ruleset_list: Vec<u32> = vec![2; 28];
         for birth in birth_list {
-            ruleset_list[birth] = 2;
+            ruleset_list[birth as usize] = 2;
         }
 
         for survive in survive_list {
-            ruleset_list[survive] = 1;
+            ruleset_list[survive as usize] = 1;
         }
 
         let rulset_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
@@ -354,6 +354,7 @@ impl State {
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
+                            // min_binding_size: None,
                             min_binding_size: wgpu::BufferSize::new(
                                 (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 16) as _,
                             ),
@@ -366,6 +367,7 @@ impl State {
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: false },
                             has_dynamic_offset: false,
+                            // min_binding_size: None,
                             min_binding_size: wgpu::BufferSize::new(
                                 (GRID_WIDTH * GRID_WIDTH * GRID_WIDTH * 16) as _,
                             ),
@@ -403,7 +405,7 @@ impl State {
             for y in 0..GRID_WIDTH {
                 for z in 0..GRID_WIDTH {
                     let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
-                    // cell_instance_chunk[0] = 0;
+                    // cell_instance_chunk[0] = 1;
                     cell_instance_chunk[1] = x as i32;
                     cell_instance_chunk[2] = y as i32;
                     cell_instance_chunk[3] = z as i32;
