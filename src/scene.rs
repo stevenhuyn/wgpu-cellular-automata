@@ -31,11 +31,15 @@ impl Vertex {
 }
 
 pub struct Scene {
-    cubes: Vec<Cube>,
+    pub cubes: Vec<Cube>,
 }
 
 impl Scene {
     pub fn new() -> Self {
+        Self { cubes: Vec::new() }
+    }
+
+    pub fn new_basic_scene() -> Self {
         let cubes = vec![
             Cube::new(0., 0., 0., 1., [1., 0., 0.]),
             Cube::new(1., 0., 0., 1., [0., 1., 0.]),
@@ -45,9 +49,9 @@ impl Scene {
         Self { cubes }
     }
 
-    // pub fn add_cube(&mut self, cube: Cube) {
-    //     self.cubes.push(cube);
-    // }
+    pub fn add_cube(&mut self, cube: Cube) {
+        self.cubes.push(cube);
+    }
 
     pub fn get_vertices_and_indices(&mut self) -> (Vec<Vertex>, Vec<u16>) {
         let mut vertices: Vec<Vertex> = Vec::new();
