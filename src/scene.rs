@@ -31,7 +31,7 @@ impl Vertex {
 }
 
 pub struct Scene {
-    cubes: Vec<Cube>,
+    pub cubes: Vec<Cube>,
 }
 
 impl Scene {

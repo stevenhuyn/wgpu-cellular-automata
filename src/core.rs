@@ -1,4 +1,5 @@
-use std::{borrow::Cow, iter, mem};
+use core::time;
+use std::{borrow::Cow, iter, mem, thread};
 
 use rand::{distributions::Uniform, prelude::IteratorRandom, thread_rng, Rng, SeedableRng};
 use smaa::SmaaTarget;
@@ -12,7 +13,7 @@ use crate::{
     texture::Texture,
 };
 
-const GRID_WIDTH: u32 = 5;
+const GRID_WIDTH: u32 = 15;
 const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
 
 pub struct State {
@@ -138,6 +139,59 @@ impl State {
                 label: Some("Render Encoder"),
             });
 
+        // Recalculate Vertices
+        let computed_cell_buffer = &self.cell_buffers[self.frame_num % 2];
+        let cell_buffer_slice = computed_cell_buffer.slice(..);
+        let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
+        self.device.poll(wgpu::Maintain::Wait);
+
+        let mut scene = Scene::new();
+        if let Ok(()) = cell_buffer_future.await {
+            // Gets contents of buffer
+            let data = cell_buffer_slice.get_mapped_range();
+            // Since contents are got in bytes, this converts these bytes back to u32
+            let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
+
+            for result_chunk in result.chunks(4) {
+                let state = result_chunk[0] as f32;
+                let x = result_chunk[1] as f32;
+                let y = result_chunk[2] as f32;
+                let z = result_chunk[3] as f32;
+                // println!("{}: ({} {} {})", state, x, y, z);
+
+                if state == 1f32 {
+                    scene.add_cube(Cube::new(
+                        x,
+                        y,
+                        z,
+                        1.,
+                        [
+                            x / GRID_WIDTH as f32,
+                            y / GRID_WIDTH as f32,
+                            z / GRID_WIDTH as f32,
+                        ],
+                    ))
+                }
+            }
+
+            drop(data);
+            computed_cell_buffer.unmap();
+        }
+
+        let (vertices, indices) = scene.get_vertices_and_indices();
+        println!(
+            "Num cubes: {} fn: {}",
+            self.scene.cubes.len(),
+            self.frame_num
+        );
+
+        self.queue
+            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+        self.queue
+            .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
+
+        self.scene = scene;
+
         // Run Compute Pass
         encoder.push_debug_group("compute boid movement");
         {
@@ -191,59 +245,12 @@ impl State {
 
         self.queue.submit(iter::once(encoder.finish()));
 
-        // Recalculate Vertices
-        let computed_cell_buffer = &self.cell_buffers[self.frame_num % 2];
-        let cell_buffer_slice = computed_cell_buffer.slice(..);
-        let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
-        self.device.poll(wgpu::Maintain::Wait);
-
-        let mut scene = Scene::new();
-        if let Ok(()) = cell_buffer_future.await {
-            // Gets contents of buffer
-            let data = cell_buffer_slice.get_mapped_range();
-            // Since contents are got in bytes, this converts these bytes back to u32
-            let result: Vec<u32> = bytemuck::cast_slice(&data).to_vec();
-
-            for result_chunk in result.chunks(4) {
-                let state = result_chunk[0] as f32;
-                let x = result_chunk[1] as f32;
-                let y = result_chunk[2] as f32;
-                let z = result_chunk[3] as f32;
-                // println!("{}: ({} {} {})", state, x, y, z);
-
-                if state == 1f32 {
-                    scene.add_cube(Cube::new(
-                        x,
-                        y,
-                        z,
-                        1.,
-                        [
-                            x / GRID_WIDTH as f32,
-                            y / GRID_WIDTH as f32,
-                            z / GRID_WIDTH as f32,
-                        ],
-                    ))
-                }
-            }
-
-            drop(data);
-            computed_cell_buffer.unmap();
-        }
-
-        let (vertices, indices) = scene.get_vertices_and_indices();
-        println!("Num vertices: {} fn: {}", vertices.len(), self.frame_num);
-
-        self.queue
-            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
-        self.queue
-            .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
-
-        self.scene = scene;
-
         smaa_frame.resolve();
         output.present();
 
         self.frame_num += 1;
+
+        thread::sleep(time::Duration::from_millis(60));
 
         Ok(())
     }
@@ -316,9 +323,9 @@ impl State {
         });
 
         // Following Death/Survive/Birth -> 0/1/2
-        let birth_list: Vec<u32> = vec![10, 11, 12, 13];
-        let survive_list: Vec<u32> = vec![10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22];
-        let mut ruleset_list: Vec<u32> = vec![2; 28];
+        let birth_list: Vec<u32> = vec![4];
+        let survive_list: Vec<u32> = vec![5, 6];
+        let mut ruleset_list: Vec<u32> = vec![0; 27];
         for birth in birth_list {
             ruleset_list[birth as usize] = 2;
         }
@@ -326,7 +333,6 @@ impl State {
         for survive in survive_list {
             ruleset_list[survive as usize] = 1;
         }
-
         let rulset_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: Some("Conway Birth List"),
             contents: bytemuck::cast_slice(&ruleset_list),
@@ -397,7 +403,7 @@ impl State {
         // Setting up initial cell data data
         let mut rng = thread_rng();
         let mut initial_cell_state: Vec<i32> = (0..(TOTAL_CELLS * 4) as usize)
-            .map(|_| if rng.gen_bool(0.5) { 0 } else { 1 })
+            .map(|_| if rng.gen_bool(0.4) { 0 } else { 1 })
             .collect();
 
         let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
@@ -405,7 +411,7 @@ impl State {
             for y in 0..GRID_WIDTH {
                 for z in 0..GRID_WIDTH {
                     let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
-                    // cell_instance_chunk[0] = 1;
+                    cell_instance_chunk[0] = 1;
                     cell_instance_chunk[1] = x as i32;
                     cell_instance_chunk[2] = y as i32;
                     cell_instance_chunk[3] = z as i32;
