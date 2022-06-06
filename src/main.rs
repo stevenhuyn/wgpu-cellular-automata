@@ -3,7 +3,7 @@ use winit::{
     dpi::LogicalSize,
     event::*,
     event_loop::{ControlFlow, EventLoop},
-    window::WindowBuilder,
+    window::{Fullscreen, WindowBuilder},
 };
 
 use crate::core::State;
@@ -18,6 +18,7 @@ fn main() {
     env_logger::init();
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
+        // .with_fullscreen(Some(Fullscreen::Borderless(None)))
         .with_inner_size(LogicalSize::new(800., 600.))
         .build(&event_loop)
         .unwrap();
