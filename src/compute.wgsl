@@ -13,7 +13,15 @@ struct Cells {
   cells : [[stride(16)]] array<Cell>;
 };
 
- let GRID_WIDTH: i32 = 40;
+let GRID_WIDTH: i32 = 40;
+
+let DEAD_STATE: i32 = 0;
+let ALIVE_STATE: i32 = 1;
+
+let DEATH_RULE = 0u;
+let SURVIVE_RULE = 1u;
+let BIRTH_RULE = 2u;
+
 
 [[group(0), binding(0)]] var<uniform> ruleset : Ruleset;
 [[group(0), binding(1)]] var<storage, read> cellsSrc : Cells;
@@ -42,7 +50,7 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
         }
 
         let neighbour_state = cellsSrc.cells[nz + (ny * GRID_WIDTH) + (nx * GRID_WIDTH * GRID_WIDTH)].state;
-        if (neighbour_state == 1) {
+        if (neighbour_state == ALIVE_STATE) {
           neighbour_count = neighbour_count + 1;
         } 
       }
@@ -50,11 +58,11 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
   }
 
 
-  if (ruleset.ruleset[neighbour_count] == 1u && cell.state == 1) { // Stay alive
-    cellsDst.cells[index].state = 0;
-  } else if (ruleset.ruleset[neighbour_count] == 2u && cell.state == 0) { // Become alive
-    cellsDst.cells[index].state = 1;
-  } else if (ruleset.ruleset[neighbour_count] == 0u)  {
-    cellsDst.cells[index].state = 0;
+  if (ruleset.ruleset[neighbour_count] == SURVIVE_RULE && cell.state == ALIVE_STATE) { // Stay alive
+    cellsDst.cells[index].state = DEAD_STATE;
+  } else if (ruleset.ruleset[neighbour_count] == BIRTH_RULE && cell.state == DEAD_STATE) { // Become alive
+    cellsDst.cells[index].state = ALIVE_STATE;
+  } else if (ruleset.ruleset[neighbour_count] == DEATH_RULE)  {
+    cellsDst.cells[index].state = DEAD_STATE;
   }
 }
