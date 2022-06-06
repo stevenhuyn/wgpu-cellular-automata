@@ -39,7 +39,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: &Window, mut scene: Scene) -> Self {
+    pub async fn new(window: &Window, scene: Scene) -> Self {
         let (_instance, surface, adapter, device, queue) = State::create_iadq(window).await;
         let size = window.inner_size();
         let config = State::configure_surface(&surface, &adapter, size);
@@ -145,7 +145,7 @@ impl State {
                 encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
             cpass.set_pipeline(&self.compute_pipeline);
             cpass.set_bind_group(0, &self.cell_bind_groups[self.frame_num % 2], &[]);
-            cpass.dispatch(TOTAL_CELLS, 0, 0);
+            cpass.dispatch(TOTAL_CELLS, 1, 1);
         }
         encoder.pop_debug_group();
 
@@ -189,13 +189,11 @@ impl State {
             render_pass.draw_indexed(0..indices.len() as u32, 0, 0..1);
         }
 
-        // update frame count
-        self.frame_num += 1;
-
         self.queue.submit(iter::once(encoder.finish()));
 
         // Recalculate Vertices
-        let cell_buffer_slice = self.cell_buffers[self.frame_num % 2].slice(..);
+        let computed_cell_buffer = &self.cell_buffers[(self.frame_num + 1) % 2];
+        let cell_buffer_slice = computed_cell_buffer.slice(..);
         let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
         self.device.poll(wgpu::Maintain::Wait);
 
@@ -211,7 +209,7 @@ impl State {
                 let x = result_chunk[1] as f32;
                 let y = result_chunk[2] as f32;
                 let z = result_chunk[3] as f32;
-                println!("{}: ({} {} {})", state, x, y, z);
+                // println!("{}: ({} {} {})", state, x, y, z);
 
                 if state == 1f32 {
                     scene.add_cube(Cube::new(
@@ -229,11 +227,11 @@ impl State {
             }
 
             drop(data);
-            self.cell_buffers[self.frame_num % 2].unmap();
+            computed_cell_buffer.unmap();
         }
 
         let (vertices, indices) = scene.get_vertices_and_indices();
-        println!("Num vertices: {}", vertices.len());
+        println!("Num vertices: {} fn: {}", vertices.len(), self.frame_num);
 
         self.queue
             .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
@@ -244,6 +242,8 @@ impl State {
 
         smaa_frame.resolve();
         output.present();
+
+        self.frame_num += 1;
 
         Ok(())
     }

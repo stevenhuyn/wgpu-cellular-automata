@@ -33,7 +33,7 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
           continue;
         }
 
-        let neighbour_state = cellsSrc.cells[index].state;
+        let neighbour_state = cellsSrc.cells[nx + ny * 5 + nz * 25].state;
         if (neighbour_state > 0) {
           neighbour_count = neighbour_count + 1;
         } 
@@ -46,5 +46,4 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
     } else if (ruleset.ruleset[neighbour_count] == 2u) { // Become alive
       cellsDst.cells[index].state = 1;
     }
-      
 }
