@@ -185,10 +185,10 @@ impl State {
             self.frame_num
         );
 
-        self.queue
-            .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
-        self.queue
-            .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
+        // self.queue
+        //     .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
+        // self.queue
+        //     .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
 
         self.scene = scene;
 

@@ -10,7 +10,7 @@ struct Cell {
 };
 
 struct Cells {
-  cells : [[stride(32)]] array<Cell>;
+  cells : [[stride(16)]] array<Cell>;
 };
 
 
@@ -57,5 +57,4 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
   } else {
     cellsDst.cells[index].state = 0;
   }
-
 }
