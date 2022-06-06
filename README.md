@@ -15,5 +15,5 @@ Foundations of the code built off of [sotrh's tutorial](https://sotrh.github.io/
 ## Demo
 
 <p align="center">
-  <img src="./media/conwaytime.gif" width="auto">
+  <img src="./media/conwayrotate.gif" width="auto">
 </p>
