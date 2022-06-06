@@ -9,7 +9,10 @@ Foundations of the code built off of [sotrh's tutorial](https://sotrh.github.io/
 - [x] Compute Shader
 - [ ] Better Camera Controls
 - [ ] Configuration (camera poistion, ruleset, grid width)
-- [ ] Aesthetic changes (Lighting, birth/death animation)
+- [ ] Aesthetic changes
+  - [ ]  Lighting,
+  - [ ]  Birth/Death animation
+  - [x]  Anti-aliasing via [smaa-rs](https://github.com/fintelia/smaa-rs)
 - [ ] WebGPU example
 
 ## Demo
