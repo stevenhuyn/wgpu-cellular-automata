@@ -47,7 +47,7 @@ impl State {
         surface.configure(&device, &config);
         let shader = State::get_shader(&device);
         let camera = Camera::new(&config);
-        let camera_controller = CameraController::new(0.2);
+        let camera_controller = CameraController::new(1.);
         let depth_texture = Texture::create_depth_texture(&device, &config, "depth_texture");
 
         let smaa_target = SmaaTarget::new(
