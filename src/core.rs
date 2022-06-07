@@ -131,9 +131,9 @@ impl State {
         let view = output
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
-        let smaa_frame = self
-            .smaa_target
-            .start_frame(&self.device, &self.queue, &view);
+        // let smaa_frame = self
+        //     .smaa_target
+        //     .start_frame(&self.device, &self.queue, &view);
 
         let mut encoder = self
             .device
@@ -209,7 +209,7 @@ impl State {
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),
                 color_attachments: &[wgpu::RenderPassColorAttachment {
-                    view: &*smaa_frame,
+                    view: &view,
                     resolve_target: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color {
@@ -240,7 +240,7 @@ impl State {
 
         self.queue.submit(iter::once(encoder.finish()));
 
-        smaa_frame.resolve();
+        // smaa_frame.resolve();
         output.present();
 
         self.frame_num += 1;
