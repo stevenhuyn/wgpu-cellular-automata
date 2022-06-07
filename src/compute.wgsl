@@ -58,11 +58,12 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
   }
 
 
-  if (ruleset.ruleset[neighbour_count] == SURVIVE_RULE && cell.state == ALIVE_STATE) { // Stay alive
+  let rule = ruleset.ruleset[neighbour_count];
+  if (rule == SURVIVE_RULE && cell.state == ALIVE_STATE) {
     cellsDst.cells[index].state = DEAD_STATE;
-  } else if (ruleset.ruleset[neighbour_count] == BIRTH_RULE && cell.state == DEAD_STATE) { // Become alive
+  } else if (rule == BIRTH_RULE && cell.state == DEAD_STATE) {
     cellsDst.cells[index].state = ALIVE_STATE;
-  } else if (ruleset.ruleset[neighbour_count] == DEATH_RULE)  {
+  } else {
     cellsDst.cells[index].state = DEAD_STATE;
   }
 }

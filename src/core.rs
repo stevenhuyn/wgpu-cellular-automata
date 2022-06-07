@@ -40,7 +40,7 @@ pub struct State {
 }
 
 impl State {
-    pub async fn new(window: &Window, scene: Scene) -> Self {
+    pub async fn new(window: &Window, scene: Option<Scene>) -> Self {
         let (_instance, surface, adapter, device, queue) = State::create_iadq(window).await;
         let size = window.inner_size();
         let config = State::configure_surface(&surface, &adapter, size);
@@ -70,7 +70,9 @@ impl State {
         ) = State::setup_render_pipeline(&device, &shader, &config, &camera);
 
         let (cell_bind_groups, cell_buffers, compute_pipeline) =
-            State::setup_compute_pipeline(&device);
+            State::setup_compute_pipeline(&device, &scene);
+
+        let scene = scene.unwrap_or_else(Scene::new);
 
         Self {
             cell_bind_groups,
@@ -140,7 +142,7 @@ impl State {
             });
 
         // Recalculate Vertices
-        let computed_cell_buffer = &self.cell_buffers[(self.frame_num + 1) % 2];
+        let computed_cell_buffer = &self.cell_buffers[self.frame_num % 2];
         let cell_buffer_slice = computed_cell_buffer.slice(..);
         let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
         self.device.poll(wgpu::Maintain::Wait);
@@ -179,7 +181,6 @@ impl State {
         }
 
         let (vertices, indices) = scene.get_vertices_and_indices();
-
         self.queue
             .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
         self.queue
@@ -199,7 +200,7 @@ impl State {
             let mut cpass =
                 encoder.begin_compute_pass(&wgpu::ComputePassDescriptor { label: None });
             cpass.set_pipeline(&self.compute_pipeline);
-            cpass.set_bind_group(0, &self.cell_bind_groups[self.frame_num % 2], &[]);
+            cpass.set_bind_group(0, &self.cell_bind_groups[(self.frame_num + 1) % 2], &[]);
             cpass.dispatch(65535, 1, 1);
         }
         encoder.pop_debug_group();
@@ -244,7 +245,7 @@ impl State {
 
         self.frame_num += 1;
 
-        // thread::sleep(time::Duration::from_millis(50));
+        // thread::sleep(time::Duration::from_millis(200));
 
         Ok(())
     }
@@ -309,6 +310,7 @@ impl State {
 
     fn setup_compute_pipeline(
         device: &wgpu::Device,
+        scene: &Option<Scene>,
     ) -> (Vec<wgpu::BindGroup>, Vec<wgpu::Buffer>, ComputePipeline) {
         // Compute
         let compute_shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
@@ -391,20 +393,45 @@ impl State {
         });
 
         // Setting up initial cell data data
-        let mut rng = thread_rng();
-        let mut initial_cell_state: Vec<i32> = (0..(TOTAL_CELLS * 4) as usize)
-            .map(|_| if rng.gen_bool(0.9) { 0 } else { 1 })
-            .collect();
+        // TODO: Fix duplicate code logic
+        let mut initial_cell_state: Vec<i32>;
+        if let Some(scene) = scene {
+            initial_cell_state = vec![0; TOTAL_CELLS as usize * 4];
+            let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
+            for x in 0..GRID_WIDTH {
+                for y in 0..GRID_WIDTH {
+                    for z in 0..GRID_WIDTH {
+                        let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
+                        // cell_instance_chunk[0] = 1;
+                        cell_instance_chunk[1] = x as i32;
+                        cell_instance_chunk[2] = y as i32;
+                        cell_instance_chunk[3] = z as i32;
+                    }
+                }
+            }
+            for cube in scene.cubes.iter() {
+                let index = cube.x as usize
+                    + cube.y as usize * GRID_WIDTH as usize
+                    + cube.z as usize * GRID_WIDTH as usize * GRID_WIDTH as usize;
+                // println!("index {}", index);
+                initial_cell_state[index * 4] = 1;
+            }
+        } else {
+            let mut rng = thread_rng();
+            initial_cell_state = (0..(TOTAL_CELLS * 4) as usize)
+                .map(|_| if rng.gen_bool(0.9) { 0 } else { 1 })
+                .collect();
 
-        let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
-        for x in 0..GRID_WIDTH {
-            for y in 0..GRID_WIDTH {
-                for z in 0..GRID_WIDTH {
-                    let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
-                    // cell_instance_chunk[0] = 1;
-                    cell_instance_chunk[1] = x as i32;
-                    cell_instance_chunk[2] = y as i32;
-                    cell_instance_chunk[3] = z as i32;
+            let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
+            for x in 0..GRID_WIDTH {
+                for y in 0..GRID_WIDTH {
+                    for z in 0..GRID_WIDTH {
+                        let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
+                        // cell_instance_chunk[0] = 1;
+                        cell_instance_chunk[1] = x as i32;
+                        cell_instance_chunk[2] = y as i32;
+                        cell_instance_chunk[3] = z as i32;
+                    }
                 }
             }
         }

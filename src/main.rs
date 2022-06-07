@@ -23,10 +23,11 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-    let scene = Scene::new();
+    // Use to test repeating pattern
+    let scene = Scene::new_tube();
 
     // State::new uses async code, so we're going to wait for it to finish
-    let mut state = pollster::block_on(State::new(&window, scene));
+    let mut state = pollster::block_on(State::new(&window, None));
 
     // main()
     event_loop.run(move |event, _, control_flow| match event {
