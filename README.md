@@ -9,6 +9,7 @@ Used [Chris Evan's](https://chrisevans9629.github.io/blog/2020/07/27/game-of-lif
 ## Todo
 - [x] Cubes
 - [x] Compute Shader
+- [ ] Generate Vertices from Positions in Shader
 - [ ] Better Camera Controls
 - [ ] Configuration (camera poistion, ruleset, grid width)
 - [ ] Aesthetic changes
@@ -16,6 +17,7 @@ Used [Chris Evan's](https://chrisevans9629.github.io/blog/2020/07/27/game-of-lif
   - [ ]  Birth/Death animation
   - [x]  Anti-aliasing via [smaa-rs](https://github.com/fintelia/smaa-rs)
 - [ ] WebGPU example
+- [ ] Make transparent high quality GIF
 
 ## Demo
 
