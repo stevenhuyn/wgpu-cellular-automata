@@ -1,9 +1,8 @@
-use core::time;
-use std::{borrow::Cow, iter, mem, thread};
+use std::{borrow::Cow, iter, mem};
 
-use rand::{distributions::Uniform, prelude::IteratorRandom, thread_rng, Rng, SeedableRng};
+use rand::{thread_rng, Rng};
 use smaa::SmaaTarget;
-use wgpu::{util::DeviceExt, BindGroup, ComputePipeline};
+use wgpu::{util::DeviceExt, ComputePipeline};
 use winit::{event::WindowEvent, window::Window};
 
 use crate::{
@@ -159,7 +158,6 @@ impl State {
                 let x = result_chunk[1] as f32;
                 let y = result_chunk[2] as f32;
                 let z = result_chunk[3] as f32;
-                // println!("{}: ({} {} {})", state, x, y, z);
 
                 if state == 1f32 {
                     scene.add_cube(Cube::new(
@@ -185,12 +183,6 @@ impl State {
             .write_buffer(&self.vertex_buffer, 0, bytemuck::cast_slice(&vertices));
         self.queue
             .write_buffer(&self.index_buffer, 0, bytemuck::cast_slice(&indices));
-
-        // println!(
-        //     "Num cubes: {} fn: {}",
-        //     self.scene.cubes.len(),
-        //     self.frame_num
-        // );
 
         self.scene = scene;
 
@@ -244,8 +236,6 @@ impl State {
         output.present();
 
         self.frame_num += 1;
-
-        // thread::sleep(time::Duration::from_millis(200));
 
         Ok(())
     }
@@ -413,7 +403,6 @@ impl State {
                 let index = cube.x as usize
                     + cube.y as usize * GRID_WIDTH as usize
                     + cube.z as usize * GRID_WIDTH as usize * GRID_WIDTH as usize;
-                // println!("index {}", index);
                 initial_cell_state[index * 4] = 1;
             }
         } else {
