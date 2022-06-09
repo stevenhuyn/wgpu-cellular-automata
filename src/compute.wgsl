@@ -13,6 +13,24 @@ struct Cells {
   cells : [[stride(16)]] array<Cell>;
 };
 
+struct Vertex {
+    position: vec3<f32>;
+    color: vec3<f32>;
+};
+
+struct Index {
+  index: u32;
+};
+
+
+struct Vertices {
+  vertices: array<Vertex>
+}
+
+struct Index {
+  indices: array<Index>
+}
+
 let GRID_WIDTH: i32 = 40;
 
 let DEAD_STATE: i32 = 0;
@@ -26,6 +44,9 @@ let BIRTH_RULE = 2u;
 [[group(0), binding(0)]] var<uniform> ruleset : Ruleset;
 [[group(0), binding(1)]] var<storage, read> cellsSrc : Cells;
 [[group(0), binding(2)]] var<storage, read_write> cellsDst : Cells;
+[[group(0), binding(3)]] var<storage, read_write> cellsVertex : Vertices;
+[[group(0), binding(4)]] var<storage, read_write> cellsIndex : Index;
+
 
 [[stage(compute), workgroup_size(256)]]
 fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {

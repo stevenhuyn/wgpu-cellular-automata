@@ -346,7 +346,6 @@ impl State {
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
-                            // min_binding_size: None,
                             min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 16) as _),
                         },
                         count: None,
@@ -357,8 +356,27 @@ impl State {
                         ty: wgpu::BindingType::Buffer {
                             ty: wgpu::BufferBindingType::Storage { read_only: false },
                             has_dynamic_offset: false,
-                            // min_binding_size: None,
                             min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 16) as _),
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 3,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: false },
+                            has_dynamic_offset: false,
+                            min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 4 * 6 * 8) as _),
+                        },
+                        count: None,
+                    },
+                    wgpu::BindGroupLayoutEntry {
+                        binding: 4,
+                        visibility: wgpu::ShaderStages::COMPUTE,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Storage { read_only: false },
+                            has_dynamic_offset: false,
+                            min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 4 * 36) as _),
                         },
                         count: None,
                     },
