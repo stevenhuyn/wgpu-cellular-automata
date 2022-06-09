@@ -573,14 +573,14 @@ impl State {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Vertex Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 4 * 6 * 8, // 3 f32 pos, 3 f32 color, 8 verteces per cell
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Index Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 2000,
+            size: (TOTAL_CELLS as wgpu::BufferAddress) * 4 * 36, // u32, 36 indcies per cell
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
