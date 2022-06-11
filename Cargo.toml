@@ -16,4 +16,5 @@ pollster = "0.2"
 bytemuck = { version = "1.7", features = [ "derive" ] }
 anyhow = "1.0"
 smaa = "0.6.0"
-rand = "0.8"
+rand = "0.8" # TODO: Swap out for nanorand
+clap = { version = "3.1", features = ["derive"] }

@@ -12,7 +12,7 @@ use crate::{
     texture::Texture,
 };
 
-pub const GRID_WIDTH: u32 = 70;
+pub const GRID_WIDTH: u32 = 30;
 pub const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
 
 pub struct State {

@@ -41,7 +41,7 @@ impl Scene {
         }
     }
 
-    pub fn new_stairs() -> Self {
+    pub fn _new_stairs() -> Self {
         let cubes = vec![
             Cube::new(3., 3., 3., 1., [1., 0., 0.]),
             Cube::new(3., 4., 3., 1., [0., 1., 0.]),
