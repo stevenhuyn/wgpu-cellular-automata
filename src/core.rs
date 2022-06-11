@@ -12,8 +12,8 @@ use crate::{
     texture::Texture,
 };
 
-pub const GRID_WIDTH: u32 = 50;
-const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
+pub const GRID_WIDTH: u32 = 70;
+pub const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
 
 pub struct State {
     cell_bind_groups: Vec<wgpu::BindGroup>,

@@ -1,4 +1,4 @@
-use crate::cube::Cube;
+use crate::{core::TOTAL_CELLS, cube::Cube};
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -36,7 +36,9 @@ pub struct Scene {
 
 impl Scene {
     pub fn new() -> Self {
-        Self { cubes: Vec::new() }
+        Self {
+            cubes: Vec::with_capacity(TOTAL_CELLS as usize),
+        }
     }
 
     pub fn new_stairs() -> Self {
@@ -72,8 +74,8 @@ impl Scene {
     }
 
     pub fn get_vertices_and_indices(&mut self) -> (Vec<Vertex>, Vec<u32>) {
-        let mut vertices: Vec<Vertex> = Vec::new();
-        let mut indices: Vec<u32> = Vec::new();
+        let mut vertices: Vec<Vertex> = Vec::with_capacity((self.cubes.len() * 8) as usize);
+        let mut indices: Vec<u32> = Vec::with_capacity((self.cubes.len() * 36) as usize);
         let mut running_index = 0;
         for cube in self.cubes.iter() {
             vertices.extend(&cube.vertices);

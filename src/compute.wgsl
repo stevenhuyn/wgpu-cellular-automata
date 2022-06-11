@@ -13,7 +13,7 @@ struct Cells {
   cells : [[stride(16)]] array<Cell>;
 };
 
-let GRID_WIDTH: i32 = 50;
+let GRID_WIDTH: i32 = 70;
 
 let DEAD_STATE: i32 = 0;
 let ALIVE_STATE: i32 = 1;
