@@ -9,7 +9,7 @@ Used [Chris Evan's](https://chrisevans9629.github.io/blog/2020/07/27/game-of-lif
 ## Todo
 - [x] Cubes
 - [x] Compute Shader
-- [ ] Generate Vertices from Positions in Shader
+- [ ] Optimise Vertex Buffer/Index Buffer Generation (?)
 - [ ] Better Camera Controls
 - [ ] Configuration (camera poistion, ruleset, grid width)
 - [ ] Aesthetic changes
