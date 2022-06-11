@@ -78,7 +78,7 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
     }
   }
 
-
+  // Writing to cell state buffer
   let rule = ruleset.ruleset[neighbour_count];
   if (rule == SURVIVE_RULE && cell.state == ALIVE_STATE) {
     cellsDst.cells[index].state = DEAD_STATE;
@@ -86,5 +86,25 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
     cellsDst.cells[index].state = ALIVE_STATE;
   } else {
     cellsDst.cells[index].state = DEAD_STATE;
+  }
+
+  // Writing to vertex buffer
+  let vertexIndex = index * 8u;
+  let totalCells = f32(GRID_WIDTH * GRID_WIDTH * GRID_WIDTH);
+  let cellColor: vec3<f32> = vec3(f32(cell.x) / totalCells, f32(cell.y) / totalCells, f32(cell.z) / totalCells,);
+  for (var i = 0u; i < 8u; i = i + 1u) {
+    let dx = f32(i & 1u);
+    let dy = f32((i >> 1u) & 1u);
+    let dz = f32((i >> 2u) & 1u);
+
+
+    // Setting Vertex Buffer
+    cellsVertex.vertices[vertexIndex + (i * 6u)].position = vec3(f32(cell.x) + dx, f32(cell.y) + dy, f32(cell.z) + dz);
+    cellsVertex.vertices[vertexIndex + (i * 6u)].color = cellColor;
+
+    // Setting indices
+    
+
+
   }
 }
