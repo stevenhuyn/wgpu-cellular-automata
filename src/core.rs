@@ -1,6 +1,6 @@
 use std::{borrow::Cow, iter, mem};
 
-use rand::{thread_rng, Rng};
+use nanorand::{Rng, WyRand};
 use smaa::SmaaTarget;
 use wgpu::{util::DeviceExt, ComputePipeline};
 use winit::{event::WindowEvent, window::Window};
@@ -414,9 +414,9 @@ impl State {
                 initial_cell_state[index * 4] = 1;
             }
         } else {
-            let mut rng = thread_rng();
+            let mut rng = WyRand::new();
             initial_cell_state = (0..(total_cells * 4) as usize)
-                .map(|_| if rng.gen_bool(0.9) { 0 } else { 1 })
+                .map(|_| if rng.generate::<f32>() > 0.1 { 0 } else { 1 })
                 .collect();
 
             let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
