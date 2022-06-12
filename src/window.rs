@@ -1,3 +1,5 @@
+use std::time::Instant;
+
 use winit::{
     dpi::LogicalSize,
     event::*,
@@ -7,7 +9,7 @@ use winit::{
 
 use crate::{core::State, scene::Scene};
 
-pub fn run(fullscreen: bool) {
+pub fn run(fullscreen: bool, fps: bool) {
     env_logger::init();
     let event_loop = EventLoop::new();
     let mut window_builder = WindowBuilder::new();
@@ -26,6 +28,10 @@ pub fn run(fullscreen: bool) {
     // State::new uses async code, so we're going to wait for it to finish
     let mut state = pollster::block_on(State::new(&window, None));
 
+    let mut frame_count = 0;
+    let mut accum_time = 0.;
+    let mut last_frame_inst = Instant::now();
+
     // main()
     event_loop.run(move |event, _, control_flow| match event {
         Event::RedrawRequested(window_id) if window_id == window.id() => {
@@ -38,6 +44,21 @@ pub fn run(fullscreen: bool) {
                 Err(wgpu::SurfaceError::OutOfMemory) => *control_flow = ControlFlow::Exit,
                 // All other errors (Outdated, Timeout) should be resolved by the next frame
                 Err(e) => eprintln!("{:?}", e),
+            }
+
+            // Measure framerate
+            if fps {
+                accum_time += last_frame_inst.elapsed().as_secs_f32();
+                last_frame_inst = Instant::now();
+                frame_count += 1;
+                if frame_count == 100 {
+                    println!(
+                        "Avg frame time {}ms",
+                        accum_time * 1000.0 / frame_count as f32
+                    );
+                    accum_time = 0.0;
+                    frame_count = 0;
+                }
             }
         }
         Event::MainEventsCleared => {
