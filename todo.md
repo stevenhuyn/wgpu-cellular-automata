@@ -1,0 +1,12 @@
+## TODO List
+- [x] Cubes
+- [x] Compute Shader
+- [ ] Optimise Vertex Buffer/Index Buffer Generation (?)
+- [ ] Better Camera Controls
+- [ ] Configuration (camera poistion, ruleset, grid width)
+- [ ] Aesthetic changes
+  - [ ]  Lighting,
+  - [ ]  Birth/Death animation
+  - [x]  Anti-aliasing via [smaa-rs](https://github.com/fintelia/smaa-rs)
+- [ ] WebGPU example
+- [ ] Make transparent high quality GIF

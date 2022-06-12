@@ -19,7 +19,7 @@ struct Cli {
     #[clap(short = 'F', long)]
     fps: bool,
 
-    /// Width of simulation grid
+    /// Width of simulation grid, defaults to 30
     #[clap(short, long)]
     grid_width: Option<u32>,
 }

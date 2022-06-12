@@ -1,6 +1,8 @@
 # 3D Cellular Automata via wgpu
 
-Making a 3D Celluar Automata (Like Conway's Game but 3D!) to learn [wgpu](https://github.com/gfx-rs/wgpu) a cross-plaform graphics API.
+
+
+Making a 3D Celluar Automata (Like Conway's Game but 3D!) to learn [wgpu](https://github.com/gfx-rs/wgpu) a cross-plaform graphics API. Utilises the GPU via a compute shader to generate each step of the simulation in real time.
 
 Foundations of the code built off of [sotrh's tutorial](https://sotrh.github.io/learn-wgpu/#what-is-wgpu)
 
@@ -18,18 +20,6 @@ See options:
 cargo run --release -- --help
 ```
 
-## Todo
-- [x] Cubes
-- [x] Compute Shader
-- [ ] Optimise Vertex Buffer/Index Buffer Generation (?)
-- [ ] Better Camera Controls
-- [ ] Configuration (camera poistion, ruleset, grid width)
-- [ ] Aesthetic changes
-  - [ ]  Lighting,
-  - [ ]  Birth/Death animation
-  - [x]  Anti-aliasing via [smaa-rs](https://github.com/fintelia/smaa-rs)
-- [ ] WebGPU example
-- [ ] Make transparent high quality GIF
 
 ## Showcase
 
