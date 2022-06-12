@@ -6,6 +6,18 @@ Foundations of the code built off of [sotrh's tutorial](https://sotrh.github.io/
 
 Used [Chris Evan's](https://chrisevans9629.github.io/blog/2020/07/27/game-of-life) blog post as correctness reference.
 
+## Running 
+
+Show simulation with default grid width of 30
+```
+cargo run --release
+```
+
+See options:
+```
+cargo run --release -- --help
+```
+
 ## Todo
 - [x] Cubes
 - [x] Compute Shader
@@ -19,7 +31,7 @@ Used [Chris Evan's](https://chrisevans9629.github.io/blog/2020/07/27/game-of-lif
 - [ ] WebGPU example
 - [ ] Make transparent high quality GIF
 
-## Demo
+## Showcase
 
 <p align="center">
   <img src="./media/conwaycorrect.gif" width="auto">
