@@ -1,5 +1,6 @@
 struct Ruleset {
   ruleset : array<u32, 27u>;
+  grid_width: u32;
 };
 
 struct Cell {
@@ -12,8 +13,6 @@ struct Cell {
 struct Cells {
   cells : [[stride(16)]] array<Cell>;
 };
-
-let GRID_WIDTH: i32 = 30;
 
 let DEAD_STATE: i32 = 0;
 let ALIVE_STATE: i32 = 1;
@@ -31,6 +30,10 @@ let BIRTH_RULE = 2u;
 fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
   let index = global_invocation_id.x;
   var neighbour_count = 0;
+
+  // TODO: Is casting expensive?? Should really just use an encase or crevise
+  let grid_width = i32(ruleset.grid_width); 
+
   let cell = cellsSrc.cells[index];
   for (var dx = -1; dx < 2; dx = dx + 1) {
     for (var dy = -1; dy < 2; dy = dy + 1) {
@@ -45,11 +48,11 @@ fn main([[builtin(global_invocation_id)]] global_invocation_id: vec3<u32>) {
         let nz = cell.z + dz;
 
         // Checking bounds of the grid
-        if (nx < 0 || nx > GRID_WIDTH - 1 || ny < 0 || ny > GRID_WIDTH - 1 || nz < 0 || nz > GRID_WIDTH - 1) {
+        if (nx < 0 || nx > grid_width - 1 || ny < 0 || ny > grid_width - 1 || nz < 0 || nz > grid_width - 1) {
           continue;
         }
 
-        let neighbour_state = cellsSrc.cells[nz + (ny * GRID_WIDTH) + (nx * GRID_WIDTH * GRID_WIDTH)].state;
+        let neighbour_state = cellsSrc.cells[nz + (ny * grid_width) + (nx * grid_width * grid_width)].state;
         if (neighbour_state == ALIVE_STATE) {
           neighbour_count = neighbour_count + 1;
         } 

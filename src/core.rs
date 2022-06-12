@@ -12,9 +12,6 @@ use crate::{
     texture::Texture,
 };
 
-pub const GRID_WIDTH: u32 = 30;
-pub const TOTAL_CELLS: u32 = GRID_WIDTH * GRID_WIDTH * GRID_WIDTH;
-
 pub struct State {
     cell_bind_groups: Vec<wgpu::BindGroup>,
     cell_buffers: Vec<wgpu::Buffer>,
@@ -36,18 +33,21 @@ pub struct State {
     index_buffer: wgpu::Buffer,
     pub smaa_target: SmaaTarget,
     scene: Scene,
+    grid_width: u32,
+    total_cells: u32,
 }
 
 impl State {
-    pub async fn new(window: &Window, scene: Option<Scene>) -> Self {
+    pub async fn new(window: &Window, scene: Option<Scene>, grid_width: u32) -> Self {
         let (_instance, surface, adapter, device, queue) = State::create_iadq(window).await;
         let size = window.inner_size();
         let config = State::configure_surface(&surface, &adapter, size);
         surface.configure(&device, &config);
         let shader = State::get_shader(&device);
-        let camera = Camera::new(&config);
+        let camera = Camera::new(&config, grid_width);
         let camera_controller = CameraController::new(1.);
         let depth_texture = Texture::create_depth_texture(&device, &config, "depth_texture");
+        let total_cells = grid_width * grid_width * grid_width;
 
         let smaa_target = SmaaTarget::new(
             &device,
@@ -66,12 +66,12 @@ impl State {
             render_pipeline,
             vertex_buffer,
             index_buffer,
-        ) = State::setup_render_pipeline(&device, &shader, &config, &camera);
+        ) = State::setup_render_pipeline(&device, &shader, &config, &camera, total_cells);
 
         let (cell_bind_groups, cell_buffers, compute_pipeline) =
-            State::setup_compute_pipeline(&device, &scene);
+            State::setup_compute_pipeline(&device, &scene, grid_width, total_cells);
 
-        let scene = scene.unwrap_or_else(Scene::new);
+        let scene = scene.unwrap_or_else(|| Scene::new(total_cells));
 
         Self {
             cell_bind_groups,
@@ -94,6 +94,8 @@ impl State {
             index_buffer,
             smaa_target,
             scene,
+            grid_width,
+            total_cells,
         }
     }
 
@@ -146,7 +148,7 @@ impl State {
         let cell_buffer_future = cell_buffer_slice.map_async(wgpu::MapMode::Read);
         self.device.poll(wgpu::Maintain::Wait);
 
-        let mut scene = Scene::new();
+        let mut scene = Scene::new(self.total_cells);
         if let Ok(()) = cell_buffer_future.await {
             // Gets contents of buffer
             let data = cell_buffer_slice.get_mapped_range();
@@ -166,9 +168,9 @@ impl State {
                         z,
                         1.,
                         [
-                            x / GRID_WIDTH as f32,
-                            y / GRID_WIDTH as f32,
-                            z / GRID_WIDTH as f32,
+                            x / self.grid_width as f32,
+                            y / self.grid_width as f32,
+                            z / self.grid_width as f32,
                         ],
                     ))
                 }
@@ -301,6 +303,8 @@ impl State {
     fn setup_compute_pipeline(
         device: &wgpu::Device,
         scene: &Option<Scene>,
+        grid_width: u32,
+        total_cells: u32,
     ) -> (Vec<wgpu::BindGroup>, Vec<wgpu::Buffer>, ComputePipeline) {
         // Compute
         let compute_shader = device.create_shader_module(&wgpu::ShaderModuleDescriptor {
@@ -311,7 +315,8 @@ impl State {
         // Following Death/Survive/Birth -> 0/1/2
         let birth_list: Vec<u32> = vec![4];
         let survive_list: Vec<u32> = vec![5, 6];
-        let mut ruleset_list: Vec<u32> = vec![0; 27];
+
+        let mut ruleset_list: Vec<u32> = vec![0; 28];
         for birth in birth_list {
             ruleset_list[birth as usize] = 2;
         }
@@ -319,8 +324,11 @@ impl State {
         for survive in survive_list {
             ruleset_list[survive as usize] = 1;
         }
+
+        ruleset_list[27] = grid_width;
+
         let rulset_buffer = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Conway Birth List"),
+            label: Some("conway ruleset"),
             contents: bytemuck::cast_slice(&ruleset_list),
             usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         });
@@ -347,7 +355,7 @@ impl State {
                             ty: wgpu::BufferBindingType::Storage { read_only: true },
                             has_dynamic_offset: false,
                             // min_binding_size: None,
-                            min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 16) as _),
+                            min_binding_size: wgpu::BufferSize::new((total_cells * 16) as _),
                         },
                         count: None,
                     },
@@ -358,7 +366,7 @@ impl State {
                             ty: wgpu::BufferBindingType::Storage { read_only: false },
                             has_dynamic_offset: false,
                             // min_binding_size: None,
-                            min_binding_size: wgpu::BufferSize::new((TOTAL_CELLS * 16) as _),
+                            min_binding_size: wgpu::BufferSize::new((total_cells * 16) as _),
                         },
                         count: None,
                     },
@@ -386,11 +394,11 @@ impl State {
         // TODO: Fix duplicate code logic
         let mut initial_cell_state: Vec<i32>;
         if let Some(scene) = scene {
-            initial_cell_state = vec![0; TOTAL_CELLS as usize * 4];
+            initial_cell_state = vec![0; total_cells as usize * 4];
             let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
-            for x in 0..GRID_WIDTH {
-                for y in 0..GRID_WIDTH {
-                    for z in 0..GRID_WIDTH {
+            for x in 0..grid_width {
+                for y in 0..grid_width {
+                    for z in 0..grid_width {
                         let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
                         // cell_instance_chunk[0] = 1;
                         cell_instance_chunk[1] = x as i32;
@@ -401,20 +409,20 @@ impl State {
             }
             for cube in scene.cubes.iter() {
                 let index = cube.x as usize
-                    + cube.y as usize * GRID_WIDTH as usize
-                    + cube.z as usize * GRID_WIDTH as usize * GRID_WIDTH as usize;
+                    + cube.y as usize * grid_width as usize
+                    + cube.z as usize * grid_width as usize * grid_width as usize;
                 initial_cell_state[index * 4] = 1;
             }
         } else {
             let mut rng = thread_rng();
-            initial_cell_state = (0..(TOTAL_CELLS * 4) as usize)
+            initial_cell_state = (0..(total_cells * 4) as usize)
                 .map(|_| if rng.gen_bool(0.9) { 0 } else { 1 })
                 .collect();
 
             let mut chunked_initial_cell_state = initial_cell_state.chunks_mut(4);
-            for x in 0..GRID_WIDTH {
-                for y in 0..GRID_WIDTH {
-                    for z in 0..GRID_WIDTH {
+            for x in 0..grid_width {
+                for y in 0..grid_width {
+                    for z in 0..grid_width {
                         let cell_instance_chunk = chunked_initial_cell_state.next().unwrap();
                         // cell_instance_chunk[0] = 1;
                         cell_instance_chunk[1] = x as i32;
@@ -471,6 +479,7 @@ impl State {
         shader: &wgpu::ShaderModule,
         config: &wgpu::SurfaceConfiguration,
         camera: &Camera,
+        total_cells: u32,
     ) -> (
         wgpu::BindGroup,
         wgpu::Buffer,
@@ -573,14 +582,14 @@ impl State {
 
         let vertex_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Vertex Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 4 * 6 * 8, // 3 f32 pos, 3 f32 color, 8 verteces per cell
+            size: (total_cells as wgpu::BufferAddress) * 4 * 6 * 8, // 3 f32 pos, 3 f32 color, 8 verteces per cell
             usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });
 
         let index_buffer = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("Index Buffer"),
-            size: (TOTAL_CELLS as wgpu::BufferAddress) * 4 * 36, // u32, 36 indcies per cell
+            size: (total_cells as wgpu::BufferAddress) * 4 * 36, // u32, 36 indcies per cell
             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
             mapped_at_creation: false,
         });

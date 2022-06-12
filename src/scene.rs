@@ -1,4 +1,4 @@
-use crate::{core::TOTAL_CELLS, cube::Cube};
+use crate::cube::Cube;
 
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
@@ -35,9 +35,9 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new() -> Self {
+    pub fn new(total_cells: u32) -> Self {
         Self {
-            cubes: Vec::with_capacity(TOTAL_CELLS as usize),
+            cubes: Vec::with_capacity(total_cells as usize),
         }
     }
 

@@ -18,9 +18,14 @@ struct Cli {
     /// Flag to print framerate or not
     #[clap(short = 'F', long)]
     fps: bool,
+
+    /// Width of simulation grid
+    #[clap(short, long)]
+    grid_width: Option<u32>,
 }
 
 fn main() {
     let cli = Cli::parse();
-    run(cli.fullscreen, cli.fps);
+    let grid_width = cli.grid_width.unwrap_or(30);
+    run(cli.fullscreen, cli.fps, grid_width);
 }

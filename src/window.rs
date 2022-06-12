@@ -9,7 +9,7 @@ use winit::{
 
 use crate::{core::State, scene::Scene};
 
-pub fn run(fullscreen: bool, fps: bool) {
+pub fn run(fullscreen: bool, fps: bool, grid_width: u32) {
     env_logger::init();
     let event_loop = EventLoop::new();
     let mut window_builder = WindowBuilder::new();
@@ -26,7 +26,7 @@ pub fn run(fullscreen: bool, fps: bool) {
     let _scene = Scene::new_tube();
 
     // State::new uses async code, so we're going to wait for it to finish
-    let mut state = pollster::block_on(State::new(&window, None));
+    let mut state = pollster::block_on(State::new(&window, None, grid_width));
 
     let mut frame_count = 0;
     let mut accum_time = 0.;
